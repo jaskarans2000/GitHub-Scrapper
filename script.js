@@ -2,6 +2,7 @@
 const request= require('request');
 const cheerio=require('cheerio');
 const fs=require('fs');
+const {jsPDF}=require('jspdf')
 let $
 let data={}
 
@@ -77,11 +78,35 @@ function getGithub(error, response, body) {
                       }
                   }
                   fs.writeFileSync("data.json",JSON.stringify(data))
+                  pdfGenerator()
               }else{
                   console.log("Some error occured while fetching project issue url: "+url);
               }
           }
       })
+  }
+
+  function pdfGenerator(){
+      for(let x in data){
+          if(!fs.existsSync(`${x}`)){
+              fs.mkdirSync(`${x}`);
+          }
+          let projects=data[x];
+          for(let i=0;i<projects.length;i++){
+              let issues=projects[i].issue;
+              const doc = new jsPDF();
+              let sp=10;
+              for(let j=0;j<issues?.length;j++){
+                  let issueTitle=issues[i]?.issueTitle;
+                  let issueUrl=issues[i]?.issueUrl;
+                  doc.text(issueTitle, 10, sp);
+                  sp+=10;
+                  doc.text(issueUrl, 10, sp);
+                  sp+=10;
+              }
+              doc.save(`./${x}/${projects[i].projectTitle}.pdf`);
+          }
+      }
   }
 
 request('https://github.com/topics',getGithub);
